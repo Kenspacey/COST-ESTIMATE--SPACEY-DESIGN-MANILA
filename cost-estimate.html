@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cost Estimate</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,600&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F3F2EE; --surface:#FFFFFF; --ink:#1B1F1D; --ink-soft:#5B6560;
+    --accent:#2F5D50; --accent-light:#E4ECE8; --border:#D9D6CC; --danger:#8C3B2E;
+    box-sizing:border-box;
+    padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  html{scroll-padding-top:env(safe-area-inset-top,0px);}
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#181A18; --surface:#212420; --ink:#EDEBE4; --ink-soft:#9CA39D;
+      --accent:#6FBFA8; --accent-light:#26312C; --border:#3A3D38; --danger:#E08C7A;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#181A18; --surface:#212420; --ink:#EDEBE4; --ink-soft:#9CA39D;
+    --accent:#6FBFA8; --accent-light:#26312C; --border:#3A3D38; --danger:#E08C7A;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--ink); font-family:'IBM Plex Sans',sans-serif; line-height:1.5;}
+  .wrap{max-width:1100px; margin:0 auto; padding:40px 24px 150px;}
+  h1{font-family:'Newsreader',serif; font-weight:600; font-size:2.1rem; margin:0 0 4px; letter-spacing:-0.01em;}
+  .sub{color:var(--ink-soft); font-size:0.92rem; margin:0 0 20px;}
+
+  .project-bar{
+    display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;
+    background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:12px 14px; margin-bottom:22px;
+  }
+  .project-select-wrap{display:flex; align-items:center; gap:8px;}
+  .project-select-wrap label{font-size:0.78rem; color:var(--ink-soft);}
+  .project-select-wrap select{
+    border:1px solid var(--border); background:var(--bg); color:var(--ink);
+    border-radius:6px; padding:7px 9px; font:inherit; font-size:0.88rem; min-width:170px;
+  }
+  .project-actions{display:flex; gap:6px; flex-wrap:wrap;}
+  .mini-btn{
+    border:1px solid var(--border); background:var(--surface); color:var(--ink); cursor:pointer;
+    padding:7px 11px; border-radius:6px; font:inherit; font-size:0.8rem;
+  }
+  .mini-btn:hover{border-color:var(--accent); color:var(--accent);}
+  .mini-btn.danger:hover{border-color:var(--danger); color:var(--danger);}
+
+  .meta{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:20px;}
+  .field label{display:block; font-size:0.75rem; color:var(--ink-soft); margin-bottom:4px;}
+  .field input{
+    width:100%; border:1px solid var(--border); background:var(--surface); color:var(--ink);
+    border-radius:6px; padding:9px 10px; font:inherit; font-size:0.92rem;
+  }
+  .field input:focus-visible{outline:2px solid var(--accent); outline-offset:1px;}
+  .lib-toggle-row{display:flex; justify-content:flex-end; margin-bottom:14px;}
+  .lib-btn{
+    border:1px solid var(--border); background:var(--surface); color:var(--accent); cursor:pointer;
+    padding:8px 14px; border-radius:6px; font:inherit; font-size:0.85rem;
+  }
+  .lib-btn:hover{border-color:var(--accent);}
+  #libraryPanel{display:none; background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:16px; margin-bottom:20px;}
+  #libraryPanel.open{display:block;}
+  #libraryPanel h2{font-family:'Newsreader',serif; font-size:1.05rem; font-weight:600; margin:0 0 4px;}
+  #libraryPanel .hint{color:var(--ink-soft); font-size:0.8rem; margin:0 0 12px;}
+  .lib-row{display:grid; grid-template-columns:1fr 90px 120px 34px; gap:8px; margin-bottom:6px; align-items:center;}
+  .lib-row input{
+    border:1px solid var(--border); background:var(--bg); color:var(--ink);
+    border-radius:5px; padding:7px 8px; font:inherit; font-size:0.88rem;
+  }
+  .lib-row input[type=number]{font-family:'IBM Plex Mono',monospace; text-align:right;}
+  table{width:100%; border-collapse:collapse; background:var(--surface); border-radius:8px; overflow:hidden; border:1px solid var(--border);}
+  thead th{
+    text-align:left; font-size:0.72rem; font-weight:500; color:var(--ink-soft);
+    padding:10px 10px; border-bottom:1px solid var(--border); background:var(--accent-light);
+  }
+  th.num, td.num{text-align:right;}
+  th.chk, td.chk{text-align:center; width:34px;}
+  th.photo-col, td.photo-col{text-align:center; width:76px;}
+  tbody td{padding:6px 8px; border-bottom:1px solid var(--border); vertical-align:middle;}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr.excluded{opacity:0.42;}
+  tr.section-row td{background:var(--accent-light); padding:9px 8px;}
+  .section-title{
+    width:100%; border:1px solid transparent; background:transparent; color:var(--accent);
+    padding:6px 6px; border-radius:5px; font:inherit; font-family:'Newsreader',serif; font-weight:600; font-size:1.02rem;
+  }
+  .section-title:hover, .section-title:focus{border-color:var(--border); background:var(--surface);}
+  .section-title:focus-visible{outline:2px solid var(--accent); outline-offset:0px;}
+  .section-subtotal{font-family:'IBM Plex Mono',monospace; font-size:0.85rem; text-align:right; padding-right:12px; color:var(--ink-soft); white-space:nowrap;}
+  td input[type=text], td input[type=number], td select{
+    width:100%; border:1px solid transparent; background:transparent; color:var(--ink);
+    padding:7px 6px; border-radius:5px; font:inherit; font-size:0.92rem;
+  }
+  td select{cursor:pointer;}
+  td input[type=number]{font-family:'IBM Plex Mono',monospace; text-align:right;}
+  td input:hover, td input:focus, td select:hover, td select:focus{border-color:var(--border); background:var(--bg);}
+  td input:focus-visible, td select:focus-visible{outline:2px solid var(--accent); outline-offset:0px;}
+  .desc-col{min-width:220px;}
+  .desc-stack{display:flex; flex-direction:column; gap:4px;}
+  .unit-col{width:80px;} .qty-col{width:80px;} .price-col{width:105px;} .cost-col{width:110px;}
+  .cost-col-cell{font-family:'IBM Plex Mono',monospace; font-size:0.92rem; text-align:right; padding-right:12px; color:var(--ink);}
+  .row-actions{display:flex; gap:2px; justify-content:flex-end;}
+  .rm-btn, .ins-btn{
+    background:none; border:none; color:var(--ink-soft); cursor:pointer; font-size:1.05rem;
+    padding:4px 6px; border-radius:5px; line-height:1;
+  }
+  .rm-btn:hover{color:var(--danger); background:var(--surface);}
+  .ins-btn:hover{color:var(--accent); background:var(--surface);}
+  .toolbar{display:flex; justify-content:space-between; align-items:center; margin-top:14px; gap:10px; flex-wrap:wrap;}
+  .toolbar-left{display:flex; gap:8px; flex-wrap:wrap;}
+  .add-btn{
+    border:1px solid var(--border); background:var(--surface); color:var(--ink); cursor:pointer;
+    padding:9px 16px; border-radius:6px; font:inherit; font-size:0.88rem;
+  }
+  .add-btn:hover{border-color:var(--accent); color:var(--accent);}
+  .add-btn.secondary{color:var(--accent); border-color:var(--accent-light);}
+  .currency{display:flex; align-items:center; gap:6px; font-size:0.85rem; color:var(--ink-soft);}
+  .currency input{
+    width:44px; border:1px solid var(--border); background:var(--surface); color:var(--ink);
+    border-radius:5px; padding:5px 6px; font:inherit; text-align:center;
+  }
+  .summary{margin:24px 0 0 auto; width:100%; max-width:340px; background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:16px 18px;}
+  .summary-row{display:flex; justify-content:space-between; align-items:center; gap:10px; padding:8px 0; font-size:0.9rem; flex-wrap:wrap;}
+  .summary-row + .summary-row{border-top:1px solid var(--border);}
+  .summary-row > span:first-child{color:var(--ink-soft); font-size:0.82rem;}
+  .summary-controls{display:flex; gap:6px; flex:1; min-width:160px;}
+  .summary-controls select{flex:1; min-width:0;}
+  .summary-controls input{width:64px;}
+  .summary select, .summary input{
+    border:1px solid var(--border); background:var(--bg); color:var(--ink);
+    border-radius:5px; padding:6px 7px; font:inherit; font-size:0.82rem;
+  }
+  .summary input[type=number]{font-family:'IBM Plex Mono',monospace; text-align:right;}
+  .summary-val{font-family:'IBM Plex Mono',monospace; white-space:nowrap;}
+  .grand-row{font-family:'Newsreader',serif; font-weight:600; font-size:1.15rem; color:var(--accent);}
+  .grand-row .summary-val{font-family:'Newsreader',serif;}
+  .bar{
+    position:fixed; left:0; right:0; bottom:0; background:var(--surface); border-top:1px solid var(--border);
+    padding:14px calc(24px + env(safe-area-inset-left,0px)) calc(14px + env(safe-area-inset-bottom,0px)) 24px;
+  }
+  .bar-inner{max-width:1100px; margin:0 auto; display:flex; justify-content:space-between; align-items:baseline; gap:16px; flex-wrap:wrap;}
+  .bar-label{font-size:0.8rem; color:var(--ink-soft);}
+  .bar-total{font-family:'Newsreader',serif; font-weight:600; font-size:1.7rem; color:var(--accent);}
+  .print-btn{
+    border:1px solid var(--border); background:none; color:var(--ink-soft); cursor:pointer;
+    padding:8px 14px; border-radius:6px; font:inherit; font-size:0.82rem;
+  }
+  .print-btn:hover{color:var(--ink); border-color:var(--ink-soft);}
+
+  .photo-box{
+    width:56px; height:56px; border:1.5px dashed var(--border); border-radius:7px; margin:0 auto;
+    display:flex; align-items:center; justify-content:center; cursor:pointer; position:relative;
+    color:var(--ink-soft); font-size:1.3rem; background:var(--surface); overflow:hidden;
+  }
+  .photo-box:hover{border-color:var(--accent); color:var(--accent);}
+  .photo-box:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+  .photo-box img{width:100%; height:100%; object-fit:cover; display:block;}
+  .photo-rm{
+    position:absolute; top:1px; right:1px; width:17px; height:17px; border-radius:50%;
+    background:rgba(0,0,0,0.55); color:#fff; border:none; font-size:0.72rem; line-height:1; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .lightbox-overlay{
+    position:fixed; inset:0; background:rgba(0,0,0,0.78); display:flex; align-items:center; justify-content:center;
+    z-index:999; padding:24px; cursor:zoom-out;
+  }
+  .lightbox-img{max-width:92vw; max-height:92vh; border-radius:6px; box-shadow:0 10px 40px rgba(0,0,0,0.4);}
+
+  @media (max-width:640px){
+    .meta{grid-template-columns:1fr;}
+    .desc-col{min-width:150px;}
+    .lib-row{grid-template-columns:1fr 70px 90px 30px;}
+    .summary{max-width:100%;}
+    .project-bar{flex-direction:column; align-items:stretch;}
+    table, tbody{display:block; overflow-x:auto; white-space:nowrap;}
+    tr{display:table; width:100%; table-layout:fixed;}
+  }
+  @media print{
+    .bar, .rm-btn, .ins-btn, .add-btn, .print-btn, .lib-toggle-row, #libraryPanel, .photo-rm, .project-bar{display:none !important;}
+    body{background:#fff;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 id="title" contenteditable="true">Cost Estimate</h1>
+  <p class="sub">Tap any field to edit. Each project keeps its own items, and everyone shares the same materials library.</p>
+
+  <div class="project-bar">
+    <div class="project-select-wrap">
+      <label for="projectSelect">Project</label>
+      <select id="projectSelect"></select>
+    </div>
+    <div class="project-actions">
+      <button class="mini-btn" id="newProjectBtn" type="button">+ New project</button>
+      <button class="mini-btn" id="dupProjectBtn" type="button">Duplicate</button>
+      <button class="mini-btn" id="exportProjectBtn" type="button">Export</button>
+      <button class="mini-btn" id="importProjectBtn" type="button">Import</button>
+      <input id="importFileInput" type="file" accept="application/json" hidden>
+      <button class="mini-btn danger" id="deleteProjectBtn" type="button">Delete</button>
+    </div>
+  </div>
+
+  <div class="meta">
+    <div class="field"><label for="client">Client / project</label><input id="client" type="text" placeholder="e.g. Reyes residence, Phase 1"></div>
+    <div class="field"><label for="date">Date</label><input id="date" type="date"></div>
+  </div>
+
+  <div class="lib-toggle-row">
+    <button class="lib-btn" id="libToggle" type="button">Materials library</button>
+  </div>
+
+  <div id="libraryPanel">
+    <h2>Materials library</h2>
+    <p class="hint">Shared across every project on this site. Add materials you price often — selecting one in an item row fills in its unit and price, and editing a price here updates it everywhere it's used.</p>
+    <div id="libRows"></div>
+    <button class="add-btn" id="addLibRow" type="button">+ Add material</button>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th class="chk"></th>
+        <th class="desc-col">Description</th>
+        <th class="unit-col">Unit</th>
+        <th class="num qty-col">Qty</th>
+        <th class="num price-col">Unit price</th>
+        <th class="num cost-col">Unit cost</th>
+        <th class="photo-col">Photo</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="rows"></tbody>
+  </table>
+
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <button class="add-btn" id="addRow" type="button">+ Add item</button>
+      <button class="add-btn secondary" id="addSection" type="button">+ Add scope of work</button>
+    </div>
+    <div class="currency">Currency <input id="currency" type="text" maxlength="3" value="₱"></div>
+  </div>
+
+  <div class="summary">
+    <div class="summary-row">
+      <span>Subtotal</span>
+      <span class="summary-val" id="subtotalVal">₱0.00</span>
+    </div>
+    <div class="summary-row">
+      <span>Discount</span>
+      <div class="summary-controls">
+        <select id="discountType">
+          <option value="none">No discount</option>
+          <option value="percent">Percent (%)</option>
+          <option value="fixed">Fixed amount</option>
+        </select>
+        <input id="discountValue" type="number" step="any" value="0">
+      </div>
+      <span class="summary-val" id="discountVal">-₱0.00</span>
+    </div>
+    <div class="summary-row">
+      <span>Tax</span>
+      <select id="vatType">
+        <option value="non-vat">Non-VAT</option>
+        <option value="vat">VAT (12%)</option>
+      </select>
+      <span class="summary-val" id="vatVal">₱0.00</span>
+    </div>
+    <div class="summary-row grand-row">
+      <span>Grand total</span>
+      <span class="summary-val" id="summaryGrand">₱0.00</span>
+    </div>
+  </div>
+</div>
+
+<div class="bar">
+  <div class="bar-inner">
+    <button class="print-btn" id="printBtn" type="button">Print / save as PDF</button>
+    <div style="text-align:right">
+      <div class="bar-label">Grand total</div>
+      <div class="bar-total" id="grandTotal">₱0.00</div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const LIB_KEY = 'cost-estimate-library-v1';
+  const REGISTRY_KEY = 'cost-estimate-projects-v1';
+  const CURRENT_KEY = 'cost-estimate-current-v1';
+  const UNITS = ['pc','lot','lm','sq.m','cu.m','kg','set','day','hr'];
+  const MAX_PHOTO_DIM = 480;
+  let library, registry, state;
+
+  function uid(){ return Math.random().toString(36).slice(2,9); }
+  function newRow(materialId=null, desc='', unit='pc', qty=1, price=0){
+    return { id: uid(), type:'item', included:true, materialId, desc, unit, qty, price };
+  }
+  function newSection(title=''){ return { id: uid(), type:'section', title, photo:null }; }
+  function newMaterial(name='', unit='pc', price=0){ return { id: uid(), name, unit, price }; }
+
+  function projectKey(id){ return 'cost-estimate-project-' + id; }
+  function blankProject(name){
+    const id = uid();
+    return {
+      id, title: name || 'Cost Estimate', client:'', date:'', currency:'₱',
+      discountType:'none', discountValue:0, vatType:'non-vat',
+      rows:[ newSection('Scope of work') ]
+    };
+  }
+
+  // ---------- Persistence: library (shared), registry + per-project state ----------
+  function loadLibrary(){
+    try{ const raw = localStorage.getItem(LIB_KEY); if(raw){ const p = JSON.parse(raw); if(Array.isArray(p)) return p; } }catch(e){}
+    return [ newMaterial('Portland cement, 40kg bag','bag',260), newMaterial('Rebar, 10mm x 6m','pc',185) ];
+  }
+  function saveLibrary(){ try{ localStorage.setItem(LIB_KEY, JSON.stringify(library)); }catch(e){} }
+
+  function loadRegistry(){
+    try{ const raw = localStorage.getItem(REGISTRY_KEY); if(raw){ const p = JSON.parse(raw); if(Array.isArray(p)) return p; } }catch(e){}
+    return [];
+  }
+  function saveRegistry(){ try{ localStorage.setItem(REGISTRY_KEY, JSON.stringify(registry)); }catch(e){} }
+
+  function loadProjectById(id){
+    try{ const raw = localStorage.getItem(projectKey(id)); if(raw) return JSON.parse(raw); }catch(e){}
+    return null;
+  }
+  function persistProject(p){ try{ localStorage.setItem(projectKey(p.id), JSON.stringify(p)); }catch(e){ console.warn('save failed', e); } }
+  function getCurrentId(){ try{ return localStorage.getItem(CURRENT_KEY); }catch(e){ return null; } }
+  function setCurrentId(id){ try{ localStorage.setItem(CURRENT_KEY, id); }catch(e){} }
+
+  function save(){
+    persistProject(state);
+    saveLibrary();
+    const entry = registry.find(r => r.id === state.id);
+    if(entry && entry.name !== (state.title || 'Untitled project')){
+      entry.name = state.title || 'Untitled project';
+      saveRegistry();
+      renderProjectSelect();
+    }
+  }
+
+  function ensureBootstrap(){
+    registry = loadRegistry();
+    if(registry.length === 0){
+      const p = blankProject('Sample project');
+      p.rows = [
+        newSection('Masonry works'),
+        newRow(library[0].id, library[0].name, library[0].unit, 10, library[0].price),
+        newRow(library[1].id, library[1].name, library[1].unit, 20, library[1].price)
+      ];
+      registry.push({id:p.id, name:p.title});
+      saveRegistry();
+      persistProject(p);
+      setCurrentId(p.id);
+      return p;
+    }
+    let curId = getCurrentId();
+    if(!curId || !registry.find(r => r.id === curId)) curId = registry[0].id;
+    let p = loadProjectById(curId);
+    if(!p){ p = blankProject(registry.find(r=>r.id===curId).name); p.id = curId; }
+    setCurrentId(curId);
+    return p;
+  }
+
+  function cur(){ return state.currency || ''; }
+  function fmt(n){
+    n = Number(n)||0;
+    return n.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+  }
+  function lineTotal(row){ return (Number(row.qty)||0) * (Number(row.price)||0); }
+  function findMaterial(id){ return library.find(m => m.id === id); }
+
+  function syncRowsFromMaterial(materialId){
+    const mat = findMaterial(materialId);
+    if(!mat) return;
+    state.rows.forEach(r => {
+      if(r.type === 'item' && r.materialId === materialId){ r.desc = mat.name; r.unit = mat.unit; r.price = mat.price; }
+    });
+  }
+
+  function sectionSubtotal(startIdx){
+    let sum = 0;
+    for(let i = startIdx+1; i < state.rows.length; i++){
+      const r = state.rows[i];
+      if(r.type === 'section') break;
+      if(r.included) sum += lineTotal(r);
+    }
+    return sum;
+  }
+
+  function computeSummary(){
+    let subtotal = 0;
+    state.rows.forEach(r => { if(r.type === 'item' && r.included) subtotal += lineTotal(r); });
+    let discountAmount = 0;
+    if(state.discountType === 'percent') discountAmount = subtotal * (Number(state.discountValue)||0) / 100;
+    else if(state.discountType === 'fixed') discountAmount = Number(state.discountValue)||0;
+    discountAmount = Math.min(Math.max(discountAmount,0), subtotal);
+    const afterDiscount = subtotal - discountAmount;
+    let vatAmount = 0;
+    if(state.vatType === 'vat') vatAmount = afterDiscount * 0.12;
+    const grand = afterDiscount + vatAmount;
+    return {subtotal, discountAmount, vatAmount, grand};
+  }
+
+  function renderSummaryValues(){
+    const {subtotal, discountAmount, vatAmount, grand} = computeSummary();
+    document.getElementById('subtotalVal').textContent = cur()+fmt(subtotal);
+    document.getElementById('discountVal').textContent = '-'+cur()+fmt(discountAmount);
+    document.getElementById('vatVal').textContent = cur()+fmt(vatAmount);
+    document.getElementById('summaryGrand').textContent = cur()+fmt(grand);
+    document.getElementById('grandTotal').textContent = cur()+fmt(grand);
+  }
+  function renderSummaryControls(){
+    document.getElementById('discountType').value = state.discountType;
+    document.getElementById('discountValue').value = state.discountValue;
+    document.getElementById('vatType').value = state.vatType;
+    renderSummaryValues();
+  }
+
+  function renderLibrary(){
+    const wrap = document.getElementById('libRows');
+    wrap.innerHTML = '';
+    library.forEach(mat => {
+      const row = document.createElement('div'); row.className = 'lib-row';
+      const nameInput = document.createElement('input'); nameInput.type = 'text'; nameInput.value = mat.name; nameInput.placeholder = 'Material name';
+      nameInput.addEventListener('input', () => { mat.name = nameInput.value; syncRowsFromMaterial(mat.id); save(); renderRows(); });
+      const unitInput = document.createElement('input'); unitInput.type = 'text'; unitInput.value = mat.unit; unitInput.setAttribute('list','unit-list');
+      unitInput.addEventListener('input', () => { mat.unit = unitInput.value; syncRowsFromMaterial(mat.id); save(); renderRows(); });
+      const priceInput = document.createElement('input'); priceInput.type = 'number'; priceInput.step = 'any'; priceInput.value = mat.price;
+      priceInput.addEventListener('input', () => { mat.price = Number(priceInput.value)||0; syncRowsFromMaterial(mat.id); save(); renderRows(); });
+      const rmBtn = document.createElement('button'); rmBtn.className = 'rm-btn'; rmBtn.type = 'button'; rmBtn.innerHTML = '&times;'; rmBtn.setAttribute('aria-label','Remove material');
+      rmBtn.addEventListener('click', () => {
+        library = library.filter(m => m.id !== mat.id);
+        state.rows.forEach(r => { if(r.type === 'item' && r.materialId === mat.id) r.materialId = null; });
+        save(); renderLibrary(); renderRows();
+      });
+      row.appendChild(nameInput); row.appendChild(unitInput); row.appendChild(priceInput); row.appendChild(rmBtn);
+      wrap.appendChild(row);
+    });
+  }
+
+  function insertRowAfter(rowId){
+    const idx = state.rows.findIndex(r => r.id === rowId);
+    state.rows.splice(idx+1, 0, newRow());
+    save(); renderRows();
+  }
+
+  function fileToCompressedDataUrl(file, cb){
+    if(!file || !file.type || file.type.indexOf('image/') !== 0) return;
+    const reader = new FileReader();
+    reader.onload = function(e){
+      const img = new Image();
+      img.onload = function(){
+        const scale = Math.min(1, MAX_PHOTO_DIM / Math.max(img.width, img.height));
+        const w = Math.max(1, Math.round(img.width * scale));
+        const h = Math.max(1, Math.round(img.height * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        cb(canvas.toDataURL('image/jpeg', 0.72));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function openLightbox(url){
+    const overlay = document.createElement('div'); overlay.className = 'lightbox-overlay';
+    const img = document.createElement('img'); img.className = 'lightbox-img'; img.src = url;
+    overlay.appendChild(img);
+    overlay.addEventListener('click', () => overlay.remove());
+    document.body.appendChild(overlay);
+  }
+
+  function buildPhotoCell(row){
+    const td = document.createElement('td'); td.className = 'photo-col';
+    const box = document.createElement('div'); box.className = 'photo-box'; box.tabIndex = 0;
+    box.title = row.photo ? 'Click to view · paste to replace' : 'Click to choose a file, or click then paste (Ctrl/Cmd+V) an image';
+
+    const fileInput = document.createElement('input'); fileInput.type = 'file'; fileInput.accept = 'image/*'; fileInput.hidden = true;
+    fileInput.addEventListener('change', () => {
+      const f = fileInput.files && fileInput.files[0];
+      if(f) fileToCompressedDataUrl(f, url => { row.photo = url; save(); renderRows(); });
+    });
+
+    if(row.photo){
+      const img = document.createElement('img'); img.src = row.photo;
+      const rmBtn = document.createElement('button'); rmBtn.className = 'photo-rm'; rmBtn.type = 'button'; rmBtn.innerHTML = '&times;'; rmBtn.setAttribute('aria-label','Remove photo');
+      rmBtn.addEventListener('click', (e) => { e.stopPropagation(); row.photo = null; save(); renderRows(); });
+      box.appendChild(img); box.appendChild(rmBtn);
+      box.addEventListener('click', (e) => { if(e.target !== rmBtn) openLightbox(row.photo); });
+    }else{
+      box.textContent = '+';
+      box.addEventListener('click', () => fileInput.click());
+    }
+
+    box.addEventListener('paste', (e) => {
+      const items = (e.clipboardData && e.clipboardData.items) || [];
+      for(let i = 0; i < items.length; i++){
+        if(items[i].type && items[i].type.indexOf('image/') === 0){
+          const f = items[i].getAsFile();
+          fileToCompressedDataUrl(f, url => { row.photo = url; save(); renderRows(); });
+          e.preventDefault();
+          break;
+        }
+      }
+    });
+
+    td.appendChild(box); td.appendChild(fileInput);
+    return td;
+  }
+
+  function renderRows(){
+    const tbody = document.getElementById('rows');
+    tbody.innerHTML = '';
+
+    state.rows.forEach((row, idx) => {
+      if(row.type === 'section'){
+        const tr = document.createElement('tr'); tr.className = 'section-row';
+
+        const tdTitle = document.createElement('td'); tdTitle.colSpan = 5;
+        const titleInput = document.createElement('input'); titleInput.type = 'text'; titleInput.className = 'section-title';
+        titleInput.value = row.title; titleInput.placeholder = 'Scope of work — e.g. Electrical works';
+        titleInput.addEventListener('input', () => { row.title = titleInput.value; save(); });
+        tdTitle.appendChild(titleInput); tr.appendChild(tdTitle);
+
+        const tdSub = document.createElement('td'); tdSub.className = 'section-subtotal'; tdSub.dataset.sectionid = row.id;
+        tdSub.textContent = cur() + fmt(sectionSubtotal(idx));
+        tr.appendChild(tdSub);
+
+        tr.appendChild(buildPhotoCell(row));
+
+        const tdActions = document.createElement('td');
+        const actions = document.createElement('div'); actions.className = 'row-actions';
+        const insBtn = document.createElement('button'); insBtn.className = 'ins-btn'; insBtn.type = 'button'; insBtn.innerHTML = '&#43;'; insBtn.setAttribute('aria-label','Add item to this scope');
+        insBtn.addEventListener('click', () => insertRowAfter(row.id));
+        const rmBtn = document.createElement('button'); rmBtn.className = 'rm-btn'; rmBtn.type = 'button'; rmBtn.innerHTML = '&times;'; rmBtn.setAttribute('aria-label','Remove this scope heading');
+        rmBtn.addEventListener('click', () => { state.rows = state.rows.filter(r => r.id !== row.id); save(); renderRows(); });
+        actions.appendChild(insBtn); actions.appendChild(rmBtn);
+        tdActions.appendChild(actions); tr.appendChild(tdActions);
+
+        tbody.appendChild(tr);
+        return;
+      }
+
+      const tr = document.createElement('tr');
+      if(!row.included) tr.className = 'excluded';
+
+      const tdChk = document.createElement('td'); tdChk.className = 'chk';
+      const chk = document.createElement('input'); chk.type = 'checkbox'; chk.checked = row.included;
+      chk.addEventListener('change', () => { row.included = chk.checked; save(); renderRows(); });
+      tdChk.appendChild(chk); tr.appendChild(tdChk);
+
+      const tdDesc = document.createElement('td'); tdDesc.className = 'desc-col';
+      const stack = document.createElement('div'); stack.className = 'desc-stack';
+      const select = document.createElement('select');
+      const customOpt = document.createElement('option'); customOpt.value = ''; customOpt.textContent = 'Custom item…';
+      select.appendChild(customOpt);
+      library.forEach(mat => {
+        const o = document.createElement('option'); o.value = mat.id; o.textContent = mat.name;
+        select.appendChild(o);
+      });
+      select.value = row.materialId || '';
+      select.addEventListener('change', () => {
+        if(select.value === ''){ row.materialId = null; }
+        else{
+          row.materialId = select.value;
+          const mat = findMaterial(select.value);
+          if(mat){ row.desc = mat.name; row.unit = mat.unit; row.price = mat.price; }
+        }
+        save(); renderRows();
+      });
+      stack.appendChild(select);
+      if(!row.materialId){
+        const descInput = document.createElement('input'); descInput.type = 'text'; descInput.value = row.desc; descInput.placeholder = 'Item description';
+        descInput.addEventListener('input', () => { row.desc = descInput.value; save(); });
+        stack.appendChild(descInput);
+      }
+      tdDesc.appendChild(stack); tr.appendChild(tdDesc);
+
+      const tdUnit = document.createElement('td'); tdUnit.className = 'unit-col';
+      const unitInput = document.createElement('input'); unitInput.type = 'text'; unitInput.value = row.unit; unitInput.setAttribute('list','unit-list');
+      unitInput.addEventListener('input', () => { row.unit = unitInput.value; save(); });
+      tdUnit.appendChild(unitInput); tr.appendChild(tdUnit);
+
+      const tdQty = document.createElement('td'); tdQty.className = 'num qty-col';
+      const qtyInput = document.createElement('input'); qtyInput.type = 'number'; qtyInput.step = 'any'; qtyInput.value = row.qty;
+      qtyInput.addEventListener('input', () => { row.qty = qtyInput.value; save(); updateTotals(); });
+      tdQty.appendChild(qtyInput); tr.appendChild(tdQty);
+
+      const tdPrice = document.createElement('td'); tdPrice.className = 'num price-col';
+      const priceInput = document.createElement('input'); priceInput.type = 'number'; priceInput.step = 'any'; priceInput.value = row.price;
+      priceInput.addEventListener('input', () => { row.price = priceInput.value; save(); updateTotals(); });
+      tdPrice.appendChild(priceInput); tr.appendChild(tdPrice);
+
+      const tdCost = document.createElement('td'); tdCost.className = 'num cost-col cost-col-cell';
+      tdCost.textContent = cur() + fmt(lineTotal(row));
+      tdCost.dataset.rowid = row.id;
+      tr.appendChild(tdCost);
+
+      tr.appendChild(document.createElement('td'));
+
+      const tdActions = document.createElement('td');
+      const actions = document.createElement('div'); actions.className = 'row-actions';
+      const insBtn = document.createElement('button'); insBtn.className = 'ins-btn'; insBtn.type = 'button'; insBtn.innerHTML = '&#43;'; insBtn.setAttribute('aria-label','Insert item below');
+      insBtn.addEventListener('click', () => insertRowAfter(row.id));
+      const rmBtn = document.createElement('button'); rmBtn.className = 'rm-btn'; rmBtn.type = 'button'; rmBtn.innerHTML = '&times;'; rmBtn.setAttribute('aria-label','Remove item');
+      rmBtn.addEventListener('click', () => { state.rows = state.rows.filter(r => r.id !== row.id); save(); renderRows(); });
+      actions.appendChild(insBtn); actions.appendChild(rmBtn);
+      tdActions.appendChild(actions); tr.appendChild(tdActions);
+
+      tbody.appendChild(tr);
+    });
+
+    renderSummaryValues();
+  }
+
+  function updateTotals(){
+    state.rows.forEach((row, idx) => {
+      if(row.type === 'item'){
+        const cell = document.querySelector(`[data-rowid="${row.id}"]`);
+        if(cell) cell.textContent = cur() + fmt(lineTotal(row));
+      }else{
+        const cell = document.querySelector(`[data-sectionid="${row.id}"]`);
+        if(cell) cell.textContent = cur() + fmt(sectionSubtotal(idx));
+      }
+    });
+    renderSummaryValues();
+  }
+
+  function renderHeader(){
+    document.getElementById('title').textContent = state.title || 'Cost Estimate';
+    document.getElementById('client').value = state.client || '';
+    document.getElementById('date').value = state.date || '';
+    document.getElementById('currency').value = state.currency || '₱';
+  }
+
+  function renderProjectSelect(){
+    const sel = document.getElementById('projectSelect');
+    sel.innerHTML = '';
+    registry.forEach(r => {
+      const o = document.createElement('option'); o.value = r.id; o.textContent = r.name || 'Untitled project';
+      sel.appendChild(o);
+    });
+    sel.value = state.id;
+  }
+
+  function renderAll(){
+    renderHeader();
+    renderLibrary();
+    renderRows();
+    renderSummaryControls();
+    renderProjectSelect();
+  }
+
+  function switchTo(project){
+    state = project;
+    setCurrentId(project.id);
+    renderAll();
+  }
+
+  const dl = document.createElement('datalist'); dl.id = 'unit-list';
+  UNITS.forEach(u => { const o = document.createElement('option'); o.value = u; dl.appendChild(o); });
+  document.body.appendChild(dl);
+
+  document.getElementById('title').addEventListener('input', e => { state.title = e.target.textContent; save(); });
+  document.getElementById('client').addEventListener('input', e => { state.client = e.target.value; save(); });
+  document.getElementById('date').addEventListener('input', e => { state.date = e.target.value; save(); });
+  document.getElementById('currency').addEventListener('input', e => { state.currency = e.target.value; save(); renderRows(); });
+  document.getElementById('addRow').addEventListener('click', () => { state.rows.push(newRow()); save(); renderRows(); });
+  document.getElementById('addSection').addEventListener('click', () => { state.rows.push(newSection()); save(); renderRows(); });
+  document.getElementById('addLibRow').addEventListener('click', () => { library.push(newMaterial()); save(); renderLibrary(); renderRows(); });
+  document.getElementById('printBtn').addEventListener('click', () => window.print());
+  document.getElementById('libToggle').addEventListener('click', () => { document.getElementById('libraryPanel').classList.toggle('open'); });
+  document.getElementById('discountType').addEventListener('change', e => { state.discountType = e.target.value; save(); renderSummaryValues(); });
+  document.getElementById('discountValue').addEventListener('input', e => { state.discountValue = e.target.value; save(); renderSummaryValues(); });
+  document.getElementById('vatType').addEventListener('change', e => { state.vatType = e.target.value; save(); renderSummaryValues(); });
+
+  document.getElementById('projectSelect').addEventListener('change', (e) => {
+    const p = loadProjectById(e.target.value);
+    if(p) switchTo(p);
+  });
+
+  document.getElementById('newProjectBtn').addEventListener('click', () => {
+    const p = blankProject('Untitled project ' + (registry.length + 1));
+    registry.push({id:p.id, name:p.title});
+    saveRegistry();
+    persistProject(p);
+    switchTo(p);
+  });
+
+  document.getElementById('dupProjectBtn').addEventListener('click', () => {
+    const copy = JSON.parse(JSON.stringify(state));
+    copy.id = uid();
+    copy.title = (state.title || 'Project') + ' (copy)';
+    registry.push({id:copy.id, name:copy.title});
+    saveRegistry();
+    persistProject(copy);
+    switchTo(copy);
+  });
+
+  document.getElementById('deleteProjectBtn').addEventListener('click', () => {
+    if(registry.length <= 1){ alert("You can't delete the only project."); return; }
+    if(!confirm('Delete "' + (state.title || 'this project') + '"? This cannot be undone.')) return;
+    try{ localStorage.removeItem(projectKey(state.id)); }catch(e){}
+    registry = registry.filter(r => r.id !== state.id);
+    saveRegistry();
+    const next = loadProjectById(registry[0].id) || blankProject(registry[0].name);
+    switchTo(next);
+  });
+
+  document.getElementById('exportProjectBtn').addEventListener('click', () => {
+    const payload = { project: state, library: library };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = (state.title || 'cost-estimate').toLowerCase().replace(/[^a-z0-9\- ]/g,'').trim().replace(/\s+/g,'-') + '.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  });
+
+  document.getElementById('importProjectBtn').addEventListener('click', () => {
+    document.getElementById('importFileInput').click();
+  });
+  document.getElementById('importFileInput').addEventListener('change', (e) => {
+    const f = e.target.files && e.target.files[0];
+    if(!f) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try{
+        const data = JSON.parse(ev.target.result);
+        const importedProject = data.project || data;
+        const importedLibrary = data.library || [];
+        importedLibrary.forEach(m => { if(!library.find(x => x.id === m.id)) library.push(m); });
+        saveLibrary();
+        importedProject.id = uid();
+        if(!importedProject.title) importedProject.title = 'Imported project';
+        registry.push({id: importedProject.id, name: importedProject.title});
+        saveRegistry();
+        persistProject(importedProject);
+        switchTo(importedProject);
+      }catch(err){
+        alert("Could not read that file — is it a Cost Estimate export?");
+      }
+    };
+    reader.readAsText(f);
+    e.target.value = '';
+  });
+
+  library = loadLibrary();
+  state = ensureBootstrap();
+  renderAll();
+})();
+</script>
+</body>
+</html>
